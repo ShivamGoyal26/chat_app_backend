@@ -13,14 +13,7 @@ app.get("/", (req, res) => {
   res.send("API is working");
 });
 
-app.get("/api/chat", (req, res) => {
-  res.send(chats);
-});
-
-app.get("/api/chat/:id", (req, res) => {
-  const singleChat = chats.find((c) => c._id === req.params.id);
-  res.send(singleChat);
-});
+app.use("/api/user", userRoutes);
 
 app.listen(port, (error) => {
   if (error) {
