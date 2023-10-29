@@ -27,7 +27,7 @@ const getAsset = asyncHandler(async (req, res) => {
     }
     const { key } = value;
     const command = new GetObjectCommand({
-      Bucket: "public.shivam.dev",
+      Bucket: process.env.AWS_BUCKET,
       Key: key,
     });
     const url = await getSignedUrl(s3Client, command, {

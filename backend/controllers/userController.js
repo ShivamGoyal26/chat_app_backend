@@ -80,8 +80,7 @@ const authUser = asyncHandler(async (req, res) => {
 
     if (user && (await user.checkPassword(password))) {
       // If user and password are valid, generate a token
-
-      return res.status(200).json({
+      return res.status(201).json({
         data: {
           id: user._id,
           pic: user.pic,
@@ -99,6 +98,7 @@ const authUser = asyncHandler(async (req, res) => {
       });
     }
   } catch (error) {
+    console.log("not Success");
     return res.status(500).json({
       message: "Internal server error",
       status: false,

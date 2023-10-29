@@ -9,6 +9,7 @@ const { errorHandler, notFound } = require("./middlewares/errorMiddleware");
 dotenv.config();
 connectDB();
 const app = express();
+// app.use(bodyParser.json());
 const port = process.env.PORT || 3000;
 app.use(express.json()); // to accept json data
 
