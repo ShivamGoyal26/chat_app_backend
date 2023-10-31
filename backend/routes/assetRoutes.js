@@ -1,10 +1,10 @@
 const express = require("express");
 
-const { getAsset } = require("../controllers/assetController");
+const { getAsset, putAsset } = require("../controllers/assetController");
 
 const router = express.Router();
 
 router.route("/get").post(getAsset);
-// router.route("/put").post(getAsset);
+router.route("/put").post(putAsset);
 
 module.exports = router;

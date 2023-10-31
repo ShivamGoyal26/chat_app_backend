@@ -8,15 +8,17 @@ const registerUser = asyncHandler(async (req, res) => {
   try {
     const { error, value } = userRegisterSchema.validate(req.body);
 
+    console.log(error);
     if (error) {
       return res.status(400).json({
-        message: "Validation failed. Please check your input.",
+        message: error.details.map((err) => err.message),
         status: false,
-        errors: error.details.map((err) => err.message),
       });
     }
 
     const { name, email, password, pic } = value;
+
+    console.log(value);
 
     // Check if the user already exists
     const isUserExist = await User.findOne({ email });
@@ -41,7 +43,7 @@ const registerUser = asyncHandler(async (req, res) => {
         token: generateToken(user._id),
       };
 
-      return res.status(201).json({
+      return res.status(200).json({
         data: userData,
         status: true,
         message: "Registration successful",
@@ -53,10 +55,10 @@ const registerUser = asyncHandler(async (req, res) => {
       });
     }
   } catch (error) {
+    console.log(error);
     return res.status(500).json({
-      message: "Internal server error",
+      message: error.message,
       status: false,
-      error: error.message,
     });
   }
 });
@@ -67,9 +69,8 @@ const authUser = asyncHandler(async (req, res) => {
 
     if (error) {
       return res.status(400).json({
-        message: "Validation failed. Please check your input.",
+        message: error.details.map((err) => err.message),
         status: false,
-        errors: error.details.map((err) => err.message),
       });
     }
 
@@ -80,7 +81,7 @@ const authUser = asyncHandler(async (req, res) => {
 
     if (user && (await user.checkPassword(password))) {
       // If user and password are valid, generate a token
-      return res.status(201).json({
+      return res.status(200).json({
         data: {
           id: user._id,
           pic: user.pic,
@@ -100,9 +101,65 @@ const authUser = asyncHandler(async (req, res) => {
   } catch (error) {
     console.log("not Success");
     return res.status(500).json({
-      message: "Internal server error",
+      message: error.message,
       status: false,
-      error: error.message,
+    });
+  }
+});
+
+const allUsers = asyncHandler(async (req, res) => {
+  try {
+    const searchQuery = req.query.search;
+    const page = parseInt(req.query.page) || 1; // Current page, default to 1
+    const limit = parseInt(req.query.limit) || 10; // Results per page, default to 10
+
+    if (!searchQuery) {
+      return res.status(400).json({
+        message: "No search query provided.",
+        status: false,
+      });
+    }
+
+    const searchRegex = new RegExp(searchQuery, "i");
+
+    const keyword = {
+      $or: [
+        { name: { $regex: searchRegex } },
+        { email: { $regex: searchRegex } },
+      ],
+    };
+
+    const totalUsers = await User.countDocuments(keyword);
+
+    const users = await User.find(keyword)
+      .select("-password -__v -email")
+      .find({ _id: { $ne: req.user._id } })
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    return res.status(200).json({
+      message: "List of users",
+      status: true,
+      data: users,
+      page,
+      pages: Math.ceil(totalUsers / limit),
+    });
+  } catch (error) {
+    console.log("Not Success");
+    return res.status(500).json({
+      message: error.message,
+      status: false,
+    });
+  }
+});
+
+const refreshToken = asyncHandler(async (req, res) => {
+  try {
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      message: error.message,
+      status: false,
     });
   }
 });
@@ -110,4 +167,6 @@ const authUser = asyncHandler(async (req, res) => {
 module.exports = {
   registerUser,
   authUser,
+  allUsers,
+  refreshToken,
 };

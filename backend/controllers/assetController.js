@@ -1,5 +1,11 @@
+const {
+  S3Client,
+  GetObjectCommand,
+  PutObjectCommand,
+  ListObjectsV2Command,
+  DeleteObjectCommand,
+} = require("@aws-sdk/client-s3");
 const asyncHandler = require("express-async-handler");
-const { S3Client, GetObjectCommand } = require("@aws-sdk/client-s3");
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const dotenv = require("dotenv");
 
@@ -20,9 +26,8 @@ const getAsset = asyncHandler(async (req, res) => {
     const { error, value } = assetSchema.validate(req.body);
     if (error) {
       return res.status(400).json({
-        message: "Validation failed. Please check your input.",
+        message: error.details.map((err) => err.message),
         status: false,
-        errors: error.details.map((err) => err.message),
       });
     }
     const { key } = value;
@@ -34,10 +39,107 @@ const getAsset = asyncHandler(async (req, res) => {
       // expiresIn: 20 // this will expire after 20 sec
     });
     if (url) {
-      return res.status(201).json({
+      return res.status(200).json({
         message: "success",
         status: true,
         url: url,
+      });
+    } else {
+      return res.status(404).json({
+        message: "Image not found",
+        status: false,
+      });
+    }
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message,
+      status: false,
+    });
+  }
+});
+
+const putAsset = asyncHandler(async (req, res) => {
+  try {
+    const { filename, contentType, path } = req.body;
+
+    if (!filename || !contentType || !path) {
+      return res.status(400).json({
+        message: "Please check the request body",
+        status: false,
+      });
+    }
+
+    const command = new PutObjectCommand({
+      Bucket: process.env.AWS_BUCKET,
+      Key: `${path}${filename}`,
+      ContentType: contentType,
+    });
+
+    const url = await getSignedUrl(s3Client, command, {});
+    if (url) {
+      return res.status(200).json({
+        message: "success",
+        status: true,
+        url: url,
+      });
+    } else {
+      return res.status(404).json({
+        message: "Image not found",
+        status: false,
+      });
+    }
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message,
+      status: false,
+    });
+  }
+});
+
+const listAllObject = asyncHandler(async (req, res) => {
+  try {
+    const { key } = req.body;
+
+    const command = new ListObjectsV2Command({
+      Bucket: process.env.AWS_BUCKET,
+      Key: key,
+    });
+
+    const result = await s3Client.send(command);
+    if (result) {
+      return res.status(200).json({
+        message: "success",
+        status: true,
+        data: result,
+      });
+    } else {
+      return res.status(404).json({
+        message: "Image not found",
+        status: false,
+      });
+    }
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message,
+      status: false,
+    });
+  }
+});
+
+const deleteAsset = asyncHandler(async (req, res) => {
+  try {
+    const { key } = req.body;
+
+    const command = new DeleteObjectCommand({
+      Bucket: process.env.AWS_BUCKET,
+      Key: key,
+    });
+
+    const result = await s3Client.send(command);
+    if (result) {
+      return res.status(200).json({
+        message: "success",
+        status: true,
       });
     } else {
       return res.status(404).json({
@@ -54,4 +156,4 @@ const getAsset = asyncHandler(async (req, res) => {
   }
 });
 
-module.exports = { getAsset };
+module.exports = { getAsset, putAsset };
