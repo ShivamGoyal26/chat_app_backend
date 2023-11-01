@@ -18,8 +18,6 @@ const registerUser = asyncHandler(async (req, res) => {
 
     const { name, email, password, pic } = value;
 
-    console.log(value);
-
     // Check if the user already exists
     const isUserExist = await User.findOne({ email });
 
