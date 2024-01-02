@@ -62,6 +62,7 @@ const registerUser = asyncHandler(async (req, res) => {
 });
 
 const authUser = asyncHandler(async (req, res) => {
+  console.log("Request body", req.body);
   try {
     const { error, value } = userLoginSchema.validate(req.body);
 

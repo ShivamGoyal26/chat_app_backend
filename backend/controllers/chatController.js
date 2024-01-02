@@ -80,6 +80,7 @@ const createChat = asyncHandler(async (req, res) => {
       isGroupChat: false,
       users: { $all: [req.user._id, userId] },
     })
+      .select("-__v")
       .populate("users", "-password -email -__v")
       .populate("latestMessage");
 
@@ -103,10 +104,9 @@ const createChat = asyncHandler(async (req, res) => {
       };
 
       const createdChat = await Chat.create(newChatData);
-      const wholeChat = await Chat.findOne({ _id: createdChat._id }).populate(
-        "users",
-        "-password -email"
-      );
+      const wholeChat = await Chat.findOne({ _id: createdChat._id })
+        .select("-__v")
+        .populate("users", "-password -email");
 
       return res.status(201).json({
         message: "Here is the chat data.",
@@ -155,6 +155,44 @@ const createGroup = asyncHandler(async (req, res) => {
     console.log(error);
     return res.status(500).json({
       message: "Internal Server Error. Unable to create the group.",
+      status: false,
+      error: error.message, // Optionally include the specific error for debugging.
+    });
+  }
+});
+
+const deleteGroup = asyncHandler(async (req, res) => {
+  try {
+    const { chatId } = req.query;
+    console.log("chatId", req.params);
+    if (!chatId) {
+      return res.status(400).json({
+        message: "Chat ID is missing",
+        status: false,
+      });
+    }
+
+    // Check if the chat exists
+    const existingChat = await Chat.findOne({ _id: chatId });
+    console.log("existingChat", existingChat);
+    if (!existingChat) {
+      return res.status(404).json({ message: "Chat not found", status: false });
+    }
+
+    // Perform additional checks if needed (e.g., user authorization)
+
+    // Delete the chat
+    await existingChat.deleteOne();
+
+    return res.status(201).json({
+      message: "Chat deleted successfully",
+      status: true,
+      data: null,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      message: "Internal Server Error. Unable to delete the group.",
       status: false,
       error: error.message, // Optionally include the specific error for debugging.
     });
@@ -297,4 +335,5 @@ module.exports = {
   renameGroup,
   addUserToGroup,
   removeUserFromGroup,
+  deleteGroup,
 };
