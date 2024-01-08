@@ -64,6 +64,46 @@ const sendMessage = expressAsyncHandler(async (req, res) => {
   }
 });
 
+const allMessages = expressAsyncHandler(async (req, res) => {
+  const { chatId } = req.query;
+
+  if (!chatId) {
+    return res.status(400).json({
+      message: "chatId not provided in the request.",
+      status: false,
+    });
+  }
+
+  const chatExists = await Chat.exists({ _id: chatId });
+
+  if (!chatExists) {
+    return res.status(404).json({
+      message: "Chat not found.",
+      status: false,
+    });
+  }
+
+  try {
+    let message = await Message.find({ chat: chatId })
+      .populate("sender", "name pic email")
+      .select("-__v")
+      .populate("chat")
+      .sort({ createdAt: "desc" });
+
+    return res.status(200).json({
+      message: "Messages Fetched!",
+      status: true,
+      data: message,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message,
+      status: false,
+    });
+  }
+});
+
 module.exports = {
   sendMessage,
+  allMessages,
 };

@@ -164,7 +164,6 @@ const createGroup = asyncHandler(async (req, res) => {
 const deleteGroup = asyncHandler(async (req, res) => {
   try {
     const { chatId } = req.query;
-    console.log("chatId", req.params);
     if (!chatId) {
       return res.status(400).json({
         message: "Chat ID is missing",
